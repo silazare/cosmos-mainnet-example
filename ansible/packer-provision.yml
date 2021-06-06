@@ -1,0 +1,51 @@
+---
+- name: Server setup
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Upgrade all packages
+      apt:
+        name: '*'
+        state: latest
+
+    - name: Install required packages
+      apt:
+        name: '{{ item }}'
+        state: present
+        update_cache: true
+      loop:
+        - gcc
+        - make
+        - jq
+        - chkrootkit
+
+    - name: Install Golang
+      snap:
+        name: go
+        classic: true
+        state: present
+
+    - name: Create required folders
+      file:
+        path: '/opt/{{ item }}'
+        state: directory
+        mode: '0755'
+      loop:
+        - go
+        - lynis
+
+    - name: Run unattended-upgrades
+      command: unattended-upgrades
+
+  roles:
+    - role: devsec.hardening.os_hardening
+
+    - role: devsec.hardening.ssh_hardening
+      ssh_client_alive_count: 2
+      ssh_max_sessions: 2
+      ssh_print_last_log: true
+
+    - role: infopen.lynis
+      lynis_installation_version: '3.0.4'

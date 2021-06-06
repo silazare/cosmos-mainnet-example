@@ -1,0 +1,47 @@
+{
+    "min_packer_version": "1.6.0",
+    "variables": {
+      "project_id": null,
+      "source_image": "ubuntu-2004-focal-v20210510",
+      "machine_type": "e2-medium",
+      "zone": "asia-southeast1-b",
+      "ssh_username": "packer",
+      "ansible_extra_args": "",
+      "network": "cosmos-network",
+      "subnetwork": "cosmos-subnetwork"
+    },
+    "builders": [{
+      "type": "googlecompute",
+      "project_id": "{{ user `project_id` }}",
+      "image_name": "cosmos-base-v1",
+      "source_image": "{{ user `source_image` }}",
+      "zone": "{{ user `zone` }}",
+      "ssh_username": "{{ user `ssh_username` }}",
+      "machine_type": "{{ user `machine_type` }}",
+      "tags": "cosmos",
+      "network": "{{ user `network` }}",
+      "subnetwork": "{{ user `subnetwork` }}"
+    }],
+    "provisioners": [
+      {
+        "type": "shell-local",
+        "command": "ansible-galaxy collection install devsec.hardening",
+        "max_retries": 3
+      },
+      {
+        "type": "shell-local",
+        "command": "ansible-galaxy install -p {{template_dir}}/../ansible/roles -r {{template_dir}}/../ansible/requirements.yml --force",
+        "max_retries": 3
+      },
+      {
+        "type": "ansible",
+        "playbook_file": "{{template_dir}}/../ansible/packer-provision.yml",
+        "ansible_env_vars": [
+          "ANSIBLE_ROLES_PATH=ansible/roles",
+          "ANSIBLE_PIPELINING=True"
+        ],
+        "use_proxy": false,
+        "extra_arguments": "{{user `ansible_extra_args`}}"
+      }
+    ]
+  }

@@ -1,0 +1,4 @@
+---
+roles:
+  - name: infopen.lynis
+    version: '0.6.0'

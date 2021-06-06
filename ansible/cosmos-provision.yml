@@ -1,0 +1,75 @@
+# ansible-playbook -u cosmos -i '34.126.183.95,' --private-key ~/.ssh/cosmos cosmos-provision.yml
+---
+- name: Cosmos Gaia setup
+  hosts: all
+  gather_facts: false
+
+  tasks:
+    - name: Prepare Go environment
+      blockinfile:
+        path: /home/cosmos/.profile
+        block: |
+          GOPATH=$HOME/go
+          PATH=$GOPATH/bin:$PATH
+
+    - name: Git checkout Gaia
+      git:
+        repo: 'https://github.com/cosmos/gaia.git'
+        dest: /home/cosmos/gaia
+        version: 'v4.2.1'
+
+    - name: Make install Gaia
+      make:
+        chdir: /home/cosmos/gaia
+        target: install
+
+    - name: Init gaiad
+      shell: "/home/cosmos/go/bin/gaiad init $(hostname)"
+      ignore_errors: true
+
+    - name: Remove generic genesis.json
+      file:
+        path: /home/cosmos/.gaia/config/genesis.json
+        state: absent
+
+    - name: Reset gaiad
+      shell: "/home/cosmos/go/bin/gaiad unsafe-reset-all"
+      ignore_errors: true
+
+    - name: Update gaiad config
+      lineinfile:
+        dest: /home/cosmos/.gaia/config/config.toml
+        regexp: '{{ item.regexp }}'
+        line: '{{ item.line }}'
+        state: present
+      loop:
+       - regexp: '^seeds'
+         line: 'seeds = "bf8328b66dceb4987e5cd94430af66045e59899f@public-seed.cosmos.vitwit.com:26656,cfd785a4224c7940e9a10f6c1ab24c343e923bec@164.68.107.188:26656,d72b3011ed46d783e369fdf8ae2055b99a1e5074@173.249.50.25:26656,ba3bacc714817218562f743178228f23678b2873@public-seed-node.cosmoshub.certus.one:26656,3c7cad4154967a294b3ba1cc752e40e8779640ad@84.201.128.115:26656,366ac852255c3ac8de17e11ae9ec814b8c68bddb@51.15.94.196:26656"'
+
+    - name: Create gaiad service
+      become: true
+      copy:
+        content: |
+            [Unit]
+            Description=Cosmos Gaia Node
+            After=network.target
+
+            [Service]
+            Type=simple
+            User=cosmos
+            WorkingDirectory=/home/cosmos
+            ExecStart=/home/cosmos/go/bin/gaiad start --x-crisis-skip-assert-invariants
+            Restart=on-failure
+            RestartSec=3
+            LimitNOFILE=4096
+
+            [Install]
+            WantedBy=multi-user.target
+        dest: /etc/systemd/system/gaiad.service
+
+    - name: Load gaiad service
+      become: true
+      systemd:
+        name: gaiad
+        enabled: true
+        daemon_reload: true

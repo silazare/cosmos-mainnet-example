@@ -1,0 +1,34 @@
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Debug files
+.terraform-debug
+
+# Crash log files
+crash.log
+
+# Exclude all .tfvars files
+*.tfvars
+
+# Ignore override files as they are usually used to override resources locally
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Backend configs
+backend.config
+
+# Secrets
+terraform.json
+terraform.tfvars
+
+# Other temporary files
+.DS_Store
+*tmp*
+*.svg
+ansible/roles

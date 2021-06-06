@@ -1,0 +1,7 @@
+# ssh-keygen -t rsa -C "cosmos" -f ~/.ssh/cosmos
+project  = <PROJECT_ID>
+region   = <REGION_NAME>
+location = <ZONE_NAME>
+public_key_path = "~/.ssh/cosmos.pub"
+private_key_path = "~/.ssh/cosmos"
+ssh_user = "cosmos"
