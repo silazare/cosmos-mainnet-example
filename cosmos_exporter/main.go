@@ -1,0 +1,110 @@
+package main
+
+import (
+ //"fmt"
+ "encoding/json"
+ "io/ioutil"
+ "log"
+ "net/http"
+ "strconv"
+ "time"
+ "github.com/prometheus/client_golang/prometheus"
+ "github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+// Inner struct for JSON /net_info 'n_peers'
+type Peers struct {
+	Peers string `json:"n_peers"`
+}
+
+// Outer struct for JSON /net_info 'result'
+type Result struct {
+	Result Peers `json:"result"`
+}
+
+// Get number of blockchain peers from REST API of Gaia
+func getNumberPeers() float64 {
+	url := "http://localhost:26657/net_info"
+
+	gaiaClient := http.Client{
+		Timeout: time.Second * 2, // Timeout after 2 seconds
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	res, getErr := gaiaClient.Do(req)
+	if getErr != nil {
+		log.Fatal(getErr)
+	}
+
+	if res.Body != nil {
+		defer res.Body.Close()
+	}
+
+	body, readErr := ioutil.ReadAll(res.Body)
+	if readErr != nil {
+		log.Fatal(readErr)
+	}
+
+	var peers_number Result
+	jsonErr := json.Unmarshal(body, &peers_number)
+        if jsonErr != nil {
+		log.Fatalf("Unable to parse value: %q, error: %s", string(body), jsonErr.Error())
+	}
+
+	numberPeersValue, err := strconv.ParseFloat(peers_number.Result.Peers, 64)
+	return float64(numberPeersValue)
+}
+
+//Define a struct for the collector that contains pointers
+//to prometheus descriptors for each metric you wish to expose.
+//Note you can also include fields of other types if they provide utility
+//but we just won't be exposing them as metrics.
+type cosmosCollector struct {
+	numberPeersMetric *prometheus.Desc
+}
+
+//You must create a constructor for you collector that
+//initializes every descriptor and returns a pointer to the collector
+func newCosmosCollector() *cosmosCollector {
+	return &cosmosCollector{
+		numberPeersMetric: prometheus.NewDesc("cosmos_n_peers",
+			"Number of peers in blockchain network",
+			nil, nil,
+		),
+	}
+}
+
+//Each and every collector must implement the Describe function.
+//It essentially writes all descriptors to the prometheus desc channel.
+func (collector *cosmosCollector) Describe(ch chan<- *prometheus.Desc) {
+
+	//Update this section with the each metric you create for a given collector
+	ch <- collector.numberPeersMetric
+}
+
+//Collect implements required collect function for all promehteus collectors
+func (collector *cosmosCollector) Collect(ch chan<- prometheus.Metric) {
+
+	//Implement logic here to determine proper metric value to return to prometheus
+	//for each descriptor or call other functions that do so.
+	metricValue := getNumberPeers()
+
+	//Write latest value for each metric in the prometheus metric channel.
+	//Note that you can pass CounterValue, GaugeValue, or UntypedValue types here.
+	ch <- prometheus.MustNewConstMetric(collector.numberPeersMetric, prometheus.CounterValue, metricValue)
+	log.Println("Endpoint scraped")
+
+}
+
+func main() {
+   cosmos := newCosmosCollector()
+   prometheus.MustRegister(cosmos)
+
+   http.Handle("/metrics", promhttp.Handler())
+   log.Println("Start listening on port :9201")
+   log.Fatal(http.ListenAndServe(":9201", nil))
+}
