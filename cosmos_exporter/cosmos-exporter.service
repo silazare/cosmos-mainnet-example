@@ -1,0 +1,15 @@
+[Unit]
+Description=Cosmos blockchain exporter
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=cosmos
+WorkingDirectory=/home/cosmos
+ExecStart=/home/cosmos/go/bin/cosmos_exporter
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
