@@ -21,6 +21,7 @@ resource "google_compute_instance" "cosmos_node" {
     initialize_params {
       image = var.disk_image
       size  = var.disk_size
+      type  = var.disk_type
     }
   }
 

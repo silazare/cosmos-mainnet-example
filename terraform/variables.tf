@@ -37,6 +37,12 @@ variable "disk_size" {
   default     = 100
 }
 
+variable "disk_type" {
+  description = "Disk type"
+  type        = string
+  default     = "pd-ssd"
+}
+
 variable "source_range" {
   description = "Source CIDR ranges"
   type        = string
