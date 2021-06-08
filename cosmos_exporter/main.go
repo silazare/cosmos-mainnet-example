@@ -17,12 +17,12 @@ func getNumberPeers() float64 {
 	// Inner struct for JSON /net_info 'n_peers'
 	type Peers struct {
 		Peers string `json:"n_peers"`
-    }
+	}
 
-    // Outer struct for JSON /net_info 'result'
+        // Outer struct for JSON /net_info 'result'
 	type Result struct {
 		Result Peers `json:"result"`
-    }
+	}
 
 	url := "http://localhost:26657/net_info"
 
@@ -62,25 +62,20 @@ func getNumberPeers() float64 {
 // Get current block number from REST API of Gaia
 func getCurrentBlock() float64 {
 
-	// Inner struct for JSON /status 'block'
-	type Block struct {
-		Block string `json:"block"`
-    }
+	// Inner struct for JSON /status 'latest_block_height'
+	type BlockHeight struct {
+		BlockHeight string `json:"latest_block_height"`
+	}
 
-	// Inner struct for JSON /status 'protocol_version'
-	type ProtocolVersion struct {
-		ProtocolVersion Block `json:"protocol_version"`
-    }
+	// Inner struct for JSON /status 'sync_info'
+	type SyncInfo struct {
+		SyncInfo BlockHeight `json:"sync_info"`
+	}
 
-	// Inner struct for JSON /status 'node_info'
-	type NodeInfo struct {
-		NodeInfo ProtocolVersion `json:"node_info"`
-    }
-
-    // Outer struct for JSON /status 'result'
+        // Outer struct for JSON /status 'result'
 	type Result struct {
-		Result NodeInfo `json:"result"`
-    }
+		Result SyncInfo `json:"result"`
+	}
 
 	url := "http://localhost:26657/status"
 
@@ -113,27 +108,27 @@ func getCurrentBlock() float64 {
 		log.Fatalf("Unable to parse value: %q, error: %s", string(body), jsonErr.Error())
 	}
 
-	blockNumberValue, err := strconv.ParseFloat(block_number.Result.NodeInfo.ProtocolVersion.Block, 64)
+	blockNumberValue, err := strconv.ParseFloat(block_number.Result.SyncInfo.BlockHeight, 64)
 	return float64(blockNumberValue)
 }
 
 // Get time for current block from REST API of Gaia
 func getCurrentBlockTime() string {
 
-	// Inner struct for JSON /status 'protocol_version'
+	// Inner struct for JSON /status 'latest_block_time'
 	type BlockTime struct {
 		BlockTime string `json:"latest_block_time"`
-    }
+	}
 
 	// Inner struct for JSON /status 'sync_info'
 	type SyncInfo struct {
 		SyncInfo BlockTime `json:"sync_info"`
-    }
+	}
 
-    // Outer struct for JSON /status 'result'
+        // Outer struct for JSON /status 'result'
 	type Result struct {
 		Result SyncInfo `json:"result"`
-    }
+	}
 
 	url := "http://localhost:26657/status"
 
