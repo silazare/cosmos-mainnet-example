@@ -72,7 +72,22 @@ journalctl -e -u gaiad.service
 
 https://hub.cosmos.network/main/gaia-tutorials/join-mainnet.html
 
-1) Install gaiad:
+1) Export environment variables:
+
+```shell
+export GOPATH=$HOME/go
+export PATH=$GOPATH/bin:$PATH
+```
+
+2) Create a system user for running the service:
+
+```shell
+sudo mkdir -p /opt/go/bin
+sudo useradd -m -d /opt/gaiad --system --shell /usr/sbin/nologin gaiad
+sudo -u gaiad mkdir -p /opt/gaiad/config
+```
+
+3) Install gaiad:
 
 ```shell
 git clone -b v4.2.1 https://github.com/cosmos/gaia
@@ -80,13 +95,21 @@ cd gaia
 make install
 ```
 
-2) Init gaiad:
+4) Copy the binaries to /opt/go/bin/
+
+```shell
+sudo cp $HOME/go/bin/gaia* /opt/go/bin/
+sudo chown gaiad:gaiad /opt/go/bin/gaiad
+sudo chmod 755 -R /opt/go/bin
+```
+
+5) Init gaiad:
 
 ```shell
 gaiad init $(hostname)
 ```
 
-3) Fetch latest genesis.json:
+6) Fetch latest genesis.json:
 
 ```shell
 wget https://github.com/cosmos/mainnet/raw/master/genesis.cosmoshub-4.json.gz
@@ -94,16 +117,25 @@ gzip -d genesis.cosmoshub-4.json.gz
 mv genesis.cosmoshub-4.json $HOME/.gaia/config/genesis.json
 ```
 
-4) Reset gaiad:
+7) Reset gaiad:
 
 ```shell
 gaiad unsafe-reset-all
 ```
 
-5) Add seeds into `config.toml`
+8) Add seeds into `config.toml`
 
-6) Start the application:
+9) Create /etc/systemd/system/gaiad.service from template.
 
 ```shell
-gaiad start --x-crisis-skip-assert-invariants &> gaia.log &
+sudo systemctl daemon-reload
+sudo systemctl enable gaiad.service
+```
+
+10) Start the application:
+
+```shell
+sudo systemctl start gaiad
+sudo systemctl status gaiad
+journalctl -e -u gaiad.service
 ```
